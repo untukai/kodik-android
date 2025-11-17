@@ -1,0 +1,49 @@
+# File: .github/workflows/main.yml
+# Alur kerja GitHub Actions untuk membangun APK Android
+
+name: Build KODIK Android APK
+
+# Pemicu: Jalankan alur kerja ini setiap kali ada 'push' ke branch 'main'
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Memungkinkan untuk menjalankan secara manual dari tab Actions
+
+jobs:
+  build:
+    # Menggunakan mesin virtual Ubuntu terbaru yang disediakan oleh GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # Langkah 1: Mengunduh kode dari repositori Anda
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Langkah 2: Menyiapkan Java Development Kit (JDK) versi 17, yang diperlukan untuk Android
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # Langkah 3: Menyiapkan cache untuk Gradle agar proses build lebih cepat di kemudian hari
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # Langkah 4: Memberikan izin eksekusi pada Gradle Wrapper
+      # Ini adalah langkah penting agar GitHub bisa menjalankan perintah build
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      # Langkah 5: Menjalankan perintah build untuk membuat APK versi debug
+      # Versi debug tidak memerlukan signing key, sehingga lebih mudah untuk otomatisasi
+      - name: Build with Gradle
+        run: ./gradlew assembleDebug
+
+      # Langkah 6: Mengunggah file .apk yang telah dibuat sebagai "artifact"
+      # Artifact adalah hasil dari alur kerja yang bisa diunduh.
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KODIK-Android-APK # Nama file zip yang akan diunduh
+          path: app/build/outputs/apk/debug/app-debug.apk # Lokasi file APK yang dihasilkan
